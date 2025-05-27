@@ -11,7 +11,7 @@ app.use(express.json());
 
 app.use('/api/v1/summarize', summaryRoutes);
 
-const PORT = process.env.PORT || 8000;
+const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
