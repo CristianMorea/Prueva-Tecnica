@@ -11,9 +11,16 @@ app.use(express.json());
 
 app.use('/api/v1/summarize', summaryRoutes);
 
-// Usar el puerto dinámico proporcionado por Render
 const PORT = process.env.PORT || 10000;
+const ENV = process.env.NODE_ENV || 'development';
 
-app.listen(PORT, () => {
-  console.log(`Servidor corriendo en el puerto ${PORT}`);
+// Puedes guardar la URL pública en una variable de entorno o usarla directamente aquí
+const PUBLIC_URL = process.env.RENDER_EXTERNAL_URL || 'https://prueva-tecnica.onrender.com';
+
+app.listen(PORT, '0.0.0.0', () => {
+  if (ENV === 'production') {
+    console.log(`🚀 Servidor desplegado en producción en: ${PUBLIC_URL}`);
+  } else {
+    console.log(`🚀 Servidor corriendo en modo ${ENV} en http://localhost:${PORT}`);
+  }
 });
