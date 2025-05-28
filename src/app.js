@@ -11,7 +11,9 @@ app.use(express.json());
 
 app.use('/api/v1/summarize', summaryRoutes);
 
+// Usar el puerto dinámico proporcionado por Render
 const PORT = process.env.PORT || 10000;
+
 app.listen(PORT, () => {
-  console.log(`Servidor corriendo en http://localhost:${PORT}`);
+  console.log(`Servidor corriendo en el puerto ${PORT}`);
 });
