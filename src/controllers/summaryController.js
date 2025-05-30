@@ -62,14 +62,18 @@ exports.summarizeFile = async (req, res) => {
     // Dividir texto en fragmentos
     const chunks = splitTextIntoChunks(textoLimpio, MAX_CHUNK_LENGTH);
 
-    // Resumir cada fragmento y concatenar resúmenes
-    let resumenFinal = '';
+    // Resumir cada fragmento y guardar resúmenes parciales
+    const resumenesParciales = [];
     for (const chunk of chunks) {
-      const resumenChunk = await summarizeText(chunk);
-      resumenFinal += resumenChunk + ' ';
+      // Suponiendo summarizeText puede recibir opciones para idioma
+      // Modifica summarizeText para aceptar opciones si no lo hace aún
+      const resumenChunk = await summarizeText(chunk, { idioma: 'es' }); 
+      resumenesParciales.push(resumenChunk.trim());
     }
 
-    resumenFinal = resumenFinal.trim();
+    // Unir resúmenes parciales y hacer resumen final para mayor coherencia
+    const resumenIntermedio = resumenesParciales.join(' ');
+    const resumenFinal = await summarizeText(resumenIntermedio, { idioma: 'es' });
 
     fs.unlinkSync(file.path); // Eliminar archivo temporal
 
