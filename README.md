@@ -13,7 +13,7 @@ Una API REST completa para procesamiento de documentos que incluye detección de
 - API RESTful: Endpoints bien estructurados con respuestas JSON
 ## 📁 Estructura del Proyecto
 
-
+- Estructura
 ![alt text](/img/EstructuraCarpetas.png)
 
 - Diagrama de arquitectura
