@@ -1,69 +1,43 @@
-const fetch = require('node-fetch');
+// huggingface.js
+const axios = require("axios");
+require("dotenv").config();
 
-const summarizeWithHuggingFace = async (text) => {
-  // Lista de modelos a probar en orden de preferencia
-  const MODELS = [
-    "facebook/bart-large-cnn",           // Más confiable
-    "sshleifer/distilbart-cnn-12-6",    // Más rápido
-    "google/pegasus-xsum",              // Alternativa
-    "t5-small"                          // Fallback
-  ];
 
-  let lastError = null;
+const HUGGINGFACE_API_KEY = process.env.HUGGINGFACE_API_KEY;
 
-  // Intentar con cada modelo hasta que uno funcione
-  for (const model of MODELS) {
-    try {
-      console.log(`Intentando con modelo: ${model}`);
-      
-      const response = await fetch(
-        `https://api-inference.huggingface.co/models/${model}`,
-        {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ 
-            inputs: text,
-            parameters: {
-              max_length: 150,
-              min_length: 40,
-              do_sample: false
-            }
-          })
-        }
-      );
+const queryHuggingFaceModel = async (model, inputs, parameters = {}) => {
+  try {
+    // Usar el modelo que se pasa como parámetro, no hardcodeado
+    const url = `https://api-inference.huggingface.co/models/${model}`;
+    
+    console.log("🔍 Solicitando modelo:", model);
+    console.log("🌐 URL:", url);
+    console.log("📨 Inputs:", inputs);
+    console.log("⚙️ Parámetros:", parameters);
 
-      if (response.ok) {
-        const result = await response.json();
-        console.log(`✅ Éxito con modelo: ${model}`);
-        
-        // Manejo del resultado
-        if (Array.isArray(result) && result.length > 0) {
-          return result[0].summary_text || result[0].generated_text || result[0];
-        } else if (result.summary_text) {
-          return result.summary_text;
-        } else if (result.generated_text) {
-          return result.generated_text;
-        } else {
-          return typeof result === 'string' ? result : JSON.stringify(result);
-        }
-      } else {
-        const error = await response.text();
-        console.log(`❌ Error con ${model}: ${response.status} - ${error}`);
-        lastError = `${response.status} - ${error}`;
-        continue; // Probar siguiente modelo
+    const response = await axios.post(
+      url,
+      { inputs, parameters },
+      {
+        headers: {
+          Authorization: `Bearer ${HUGGINGFACE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
       }
-    } catch (error) {
-      console.log(`❌ Exception con ${model}:`, error.message);
-      lastError = error.message;
-      continue; // Probar siguiente modelo
-    }
-  }
+    );
 
-  // Si ningún modelo funcionó, lanzar error
-  throw new Error(`Todos los modelos fallaron. Último error: ${lastError}`);
+    console.log("✅ Respuesta recibida del modelo");
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error al consultar modelo Hugging Face:");
+    if (error.response) {
+      console.error("🔴 Status:", error.response.status);
+      console.error("🔴 Data:", JSON.stringify(error.response.data, null, 2));
+    } else {
+      console.error("🔴 Error:", error.message);
+    }
+    throw error.response ? error.response.data : error;
+  }
 };
 
-module.exports = summarizeWithHuggingFace;
+module.exports = { queryHuggingFaceModel };

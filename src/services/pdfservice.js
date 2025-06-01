@@ -7,3 +7,7 @@ exports.extractTextFromPDF = async (filePath) => {
   return data.text;
 };
 
+exports.extractTextFromBuffer = async (buffer) => {
+  const data = await pdfParse(buffer);
+  return data.text;
+};
