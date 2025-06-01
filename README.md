@@ -14,7 +14,15 @@ Una API REST completa para procesamiento de documentos que incluye detección de
 ## 📁 Estructura del Proyecto
 
 
-![alt text](image-1.png)
+![alt text](/img/EstructuraCarpetas.png)
+
+- Diagrama de arquitectura
+![alt text](/img/DiagramaArquitectura.png)
+- Diagrama de secuencia del resumen
+![alt text](/img/SecuenciaResumen.png)
+- Diagrama de secuencia de dteccion de idioma
+![alt text](/img/SecuenciaDetecionIidoma.png)
+
 ## 🛠️ Tecnologías Utilizadas
 
 - Node.js - Entorno de ejecución
