@@ -15,8 +15,6 @@ const translationRoutes = require('./routes/translationRoutes');
 
 const app = express();
 
-// Middleware de seguridad (opcional - comentado para evitar conflictos en producción)
-// app.use(helmet());
 
 // Configurar CORS
 app.use(cors());
@@ -51,8 +49,8 @@ if (process.env.NODE_ENV === 'development') {
 
 // Rutas principales - manteniendo la estructura original
 app.use('/api/v1/summarize', summaryRoutes);
-app.use("/api/language", languageRoutes);
-app.use('/api/translation', translationRoutes);
+app.use("/api/v1/language", languageRoutes);
+app.use('/api/v1/translation', translationRoutes);
 
 // Ruta de health check
 app.get('/health', (req, res) => {
