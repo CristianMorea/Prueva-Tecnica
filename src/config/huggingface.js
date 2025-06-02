@@ -1,15 +1,9 @@
-// huggingface.js
 const axios = require("axios");
-require("dotenv").config();
 
-
-const HUGGINGFACE_API_KEY = process.env.HUGGINGFACE_API_KEY;
-
-const queryHuggingFaceModel = async (model, inputs, parameters = {}) => {
+const queryHuggingFaceModel = async (model, inputs, parameters = {}, apiKey = process.env.HUGGINGFACE_API_KEY) => {
   try {
-    // Usar el modelo que se pasa como parámetro, no hardcodeado
     const url = `https://api-inference.huggingface.co/models/${model}`;
-    
+
     console.log("🔍 Solicitando modelo:", model);
     console.log("🌐 URL:", url);
     console.log("📨 Inputs:", inputs);
@@ -20,7 +14,7 @@ const queryHuggingFaceModel = async (model, inputs, parameters = {}) => {
       { inputs, parameters },
       {
         headers: {
-          Authorization: `Bearer ${HUGGINGFACE_API_KEY}`,
+          Authorization: `Bearer ${apiKey}`,
           "Content-Type": "application/json",
         },
       }

@@ -1,4 +1,7 @@
 ﻿node_modules/
 .env
-
-
+jest.config.js
+temp
+test
+uploads
+coverage
