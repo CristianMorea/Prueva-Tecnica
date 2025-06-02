@@ -1,268 +1,71 @@
-// controllers/translationController.js
-const translationService = require('../services/translationService');
-const pdfService = require('../services/pdfservice');
-const fs = require('fs').promises;
-const path = require('path');
+//traslationContoller
+const TranslationService = require('../services/translationService');
 
-class TranslationController {
-    /**
-     * Obtiene la lista de idiomas disponibles para traducción
-     */
-    async getSupportedLanguages(req, res) {
-        try {
-            const result = translationService.getSupportedLanguages();
-            
-            res.status(200).json({
-                success: true,
-                message: 'Idiomas obtenidos exitosamente',
-                data: result
-            });
+exports.getSupportedLanguages = async (req, res, next) => {
+  try {
+    const service = new TranslationService();
+    const result = await service.getSupportedLanguages();
+    return res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
 
-        } catch (error) {
-            console.error('Error obteniendo idiomas:', error);
-            res.status(500).json({
-                success: false,
-                message: 'Error interno del servidor',
-                error: error.message
-            });
-        }
+exports.translateText = async (req, res, next) => {
+  try {
+    const { text, targetLanguage, sourceLanguage = 'auto' } = req.body;
+
+    if (!text || !targetLanguage) {
+      return res.status(400).json({
+        success: false,
+        message: 'Texto y idioma de destino son requeridos',
+      });
     }
 
-    /**
-     * Traduce texto simple
-     */
-    async translateText(req, res) {
-        try {
-            const { text, targetLanguage, sourceLanguage = 'auto' } = req.body;
+    const service = new TranslationService();
+    const result = await service.translateLongText(text, targetLanguage, sourceLanguage);
+    return res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
 
-            // Validaciones
-            if (!text || !targetLanguage) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Texto y idioma destino son requeridos',
-                    required: ['text', 'targetLanguage']
-                });
-            }
+exports.translateFile = async (req, res, next) => {
+  try {
+    const file = req.file;
+    const { targetLanguage, sourceLanguage = 'auto' } = req.body;
 
-            const result = await translationService.translateLongText(
-                text, 
-                targetLanguage, 
-                sourceLanguage
-            );
-
-            if (!result.success) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Error en la traducción',
-                    error: result.error
-                });
-            }
-
-            res.status(200).json({
-                success: true,
-                message: 'Texto traducido exitosamente',
-                data: result
-            });
-
-        } catch (error) {
-            console.error('Error en traducción de texto:', error);
-            res.status(500).json({
-                success: false,
-                message: 'Error interno del servidor',
-                error: error.message
-            });
-        }
+    if (!file || !targetLanguage) {
+      return res.status(400).json({
+        success: false,
+        message: 'Archivo y idioma de destino son requeridos',
+      });
     }
 
-    /**
-     * Traduce archivos PDF o TXT
-     */
-    async translateFile(req, res) {
-        try {
-            const { targetLanguage, sourceLanguage = 'auto' } = req.body;
-            
-            // Validar que se subió un archivo
-            if (!req.file) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'No se proporcionó ningún archivo',
-                    supportedTypes: ['.pdf', '.txt']
-                });
-            }
+    const service = new TranslationService();
+    const result = await service.translateFile(file, targetLanguage, sourceLanguage);
+    return res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
 
-            // Validar idioma destino
-            if (!targetLanguage) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'El idioma destino es requerido',
-                    required: ['targetLanguage']
-                });
-            }
+exports.translateFileLight = async (req, res, next) => {
+  try {
+    const file = req.file;
+    const { targetLanguage, sourceLanguage = 'auto' } = req.body;
 
-            const file = req.file;
-            const fileExtension = path.extname(file.originalname).toLowerCase();
-            
-            // Validar tipo de archivo
-            if (!['.pdf', '.txt'].includes(fileExtension)) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Tipo de archivo no soportado',
-                    supportedTypes: ['.pdf', '.txt'],
-                    receivedType: fileExtension
-                });
-            }
-
-            let extractedText = '';
-
-            // Extraer texto según el tipo de archivo
-            if (fileExtension === '.pdf') {
-                try {
-                    extractedText = await pdfService.extractTextFromBuffer(file.buffer);
-                } catch (pdfError) {
-                    return res.status(400).json({
-                        success: false,
-                        message: 'Error procesando archivo PDF',
-                        error: pdfError.message
-                    });
-                }
-            } else if (fileExtension === '.txt') {
-                extractedText = file.buffer.toString('utf-8');
-            }
-
-            // Validar que se extrajo texto
-            if (!extractedText || extractedText.trim().length === 0) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'No se pudo extraer texto del archivo o el archivo está vacío'
-                });
-            }
-
-            // Traducir el texto
-            const translationResult = await translationService.translateLongText(
-                extractedText,
-                targetLanguage,
-                sourceLanguage
-            );
-
-            if (!translationResult.success) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Error en la traducción del archivo',
-                    error: translationResult.error
-                });
-            }
-
-            // Respuesta exitosa
-            res.status(200).json({
-                success: true,
-                message: 'Archivo traducido exitosamente',
-                data: {
-                    fileName: file.originalname,
-                    fileSize: file.size,
-                    fileType: fileExtension,
-                    originalTextLength: extractedText.length,
-                    translatedTextLength: translationResult.translatedText.length,
-                    sourceLanguage: translationResult.sourceLanguage,
-                    targetLanguage: translationResult.targetLanguage,
-                    targetLanguageName: translationResult.targetLanguageName,
-                    chunksProcessed: translationResult.chunksProcessed,
-                    originalText: extractedText,
-                    translatedText: translationResult.translatedText
-                }
-            });
-
-        } catch (error) {
-            console.error('Error en traducción de archivo:', error);
-            res.status(500).json({
-                success: false,
-                message: 'Error interno del servidor',
-                error: error.message
-            });
-        }
+    if (!file || !targetLanguage) {
+      return res.status(400).json({
+        success: false,
+        message: 'Archivo y idioma de destino son requeridos',
+      });
     }
 
-    /**
-     * Traduce archivo y devuelve solo el texto traducido (respuesta más ligera)
-     */
-    async translateFileLight(req, res) {
-        try {
-            const { targetLanguage, sourceLanguage = 'auto' } = req.body;
-            
-            if (!req.file) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'No se proporcionó ningún archivo'
-                });
-            }
-
-            if (!targetLanguage) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'El idioma destino es requerido'
-                });
-            }
-
-            const file = req.file;
-            const fileExtension = path.extname(file.originalname).toLowerCase();
-            
-            if (!['.pdf', '.txt'].includes(fileExtension)) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Tipo de archivo no soportado',
-                    supportedTypes: ['.pdf', '.txt']
-                });
-            }
-
-            let extractedText = '';
-
-            if (fileExtension === '.pdf') {
-                extractedText = await pdfService.extractTextFromBuffer(file.buffer);
-            } else if (fileExtension === '.txt') {
-                extractedText = file.buffer.toString('utf-8');
-            }
-
-            if (!extractedText || extractedText.trim().length === 0) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'No se pudo extraer texto del archivo'
-                });
-            }
-
-            const translationResult = await translationService.translateLongText(
-                extractedText,
-                targetLanguage,
-                sourceLanguage
-            );
-
-            if (!translationResult.success) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Error en la traducción',
-                    error: translationResult.error
-                });
-            }
-
-            // Respuesta ligera - solo texto traducido
-            res.status(200).json({
-                success: true,
-                message: 'Archivo traducido exitosamente',
-                data: {
-                    fileName: file.originalname,
-                    targetLanguage: translationResult.targetLanguage,
-                    targetLanguageName: translationResult.targetLanguageName,
-                    translatedText: translationResult.translatedText
-                }
-            });
-
-        } catch (error) {
-            console.error('Error en traducción ligera:', error);
-            res.status(500).json({
-                success: false,
-                message: 'Error interno del servidor',
-                error: error.message
-            });
-        }
-    }
-}
-
-module.exports = new TranslationController();
+    const service = new TranslationService();
+    const result = await service.translateFileLight(file, targetLanguage, sourceLanguage);
+    return res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};

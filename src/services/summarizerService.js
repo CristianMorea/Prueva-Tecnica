@@ -1,7 +1,7 @@
 const { queryHuggingFaceModel } = require("../config/huggingface");
 
 const MODELS = [
-  "sshleifer/distilbart-cnn-12-6", // Modelo rápido y eficiente
+  "facebook/bart-large-cnn", // Modelo rápido y eficiente
 ];
 
 const summarizeWithHuggingFace = async (text) => {
@@ -12,8 +12,8 @@ const summarizeWithHuggingFace = async (text) => {
       console.log(`🧠 Intentando resumir con modelo: ${model}`);
 
       const result = await queryHuggingFaceModel(model, text, {
-        max_length: 150,
-        min_length: 40,
+        max_length: 250,
+        min_length: 200,
         do_sample: false,
       });
 
